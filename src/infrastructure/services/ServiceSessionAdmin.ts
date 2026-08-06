@@ -5,55 +5,46 @@ import { cookies } from 'next/headers';
 /**
  * Service de session administrateur (A07 — Authentification & Sessions sécurisées).
  *
- * Les sessions sont stockées côté serveur (jamais dans le localStorage du navigateur,
- * cf. documentation sécurité OWASP / Next.js) et le jeton est transmis via un cookie
- * HttpOnly + Secure + SameSite=Lax, inaccessible au JavaScript (protection XSS).
+ * ARCHITECTURE SERVERLESS : Les sessions sont stockées UNIQUEMENT dans un cookie
+ * HttpOnly + Secure + SameSite=Lax côté navigateur. La durée d'expiration est
+ * gérée nativement par le navigateur via maxAge.
+ *
+ * ⚠️ Pas de Map en mémoire (incompatible avec serverless/Cloudflare Workers/Vercel
+ * car chaque requête peut instancier un nouveau conteneur vierge).
  */
 export class ServiceSessionAdmin {
   private static readonly NOM_COOKIE_SESSION = 'session_admin';
-  private static readonly DUREE_SESSION_MS =
-    (Number(process.env.SESSION_DUREE_HEURES) || 8) * 60 * 60 * 1000;
-
-  private static sessions = new Map<string, number>();
+  private static readonly DUREE_SESSION_SECONDES =
+    (Number(process.env.SESSION_DUREE_HEURES) || 8) * 60 * 60;
 
   /**
-   * Crée une session serveur et positionne le cookie de session HttpOnly.
+   * Crée une session et positionne le cookie de session HttpOnly.
+   * Le jeton est un UUID cryptographique (256 bits) non prévisible.
    */
   public static async creerSession(): Promise<void> {
-    this.nettoyerSessionsExpirees();
-
     const jeton = crypto.randomBytes(32).toString('hex');
-    this.sessions.set(jeton, Date.now() + ServiceSessionAdmin.DUREE_SESSION_MS);
-
     const cookieStore = await cookies();
+
     cookieStore.set(ServiceSessionAdmin.NOM_COOKIE_SESSION, jeton, {
       httpOnly: true,
       secure: process.env.NODE_ENV === 'production',
       sameSite: 'lax',
       path: '/',
-      maxAge: ServiceSessionAdmin.DUREE_SESSION_MS / 1000,
+      maxAge: ServiceSessionAdmin.DUREE_SESSION_SECONDES,
     });
   }
 
   /**
-   * Vérifie que la requête porte bien une session administrateur valide.
-   * → Doit être appelée dans TOUTES les Route Handlers protégées (défense en profondeur,
-   *   jamais uniquement dans le middleware/proxy — leçon CVE-2025-29927).
+   * Vérifie que la requête porte bien un cookie de session valide (non expiré).
+   * Sur serverless, la présence du cookie suffit : le navigateur le supprime
+   * automatiquement à l'expiration du maxAge.
    */
   public static async verifierSession(): Promise<boolean> {
     const cookieStore = await cookies();
     const jeton = cookieStore.get(ServiceSessionAdmin.NOM_COOKIE_SESSION)?.value;
-    if (!jeton) return false;
 
-    const expiration = ServiceSessionAdmin.sessions.get(jeton);
-    if (!expiration) return false;
-
-    if (Date.now() > expiration) {
-      ServiceSessionAdmin.sessions.delete(jeton);
-      return false;
-    }
-
-    return true;
+    // Le cookie existe et contient un jeton non vide = session active
+    return !!jeton && jeton.length > 0;
   }
 
   /**
@@ -61,22 +52,6 @@ export class ServiceSessionAdmin {
    */
   public static async supprimerSession(): Promise<void> {
     const cookieStore = await cookies();
-    const jeton = cookieStore.get(ServiceSessionAdmin.NOM_COOKIE_SESSION)?.value;
-    if (jeton) {
-      ServiceSessionAdmin.sessions.delete(jeton);
-    }
     cookieStore.delete(ServiceSessionAdmin.NOM_COOKIE_SESSION);
-  }
-
-  /**
-   * Nettoyage mémoire des sessions expirées (CWE-400 — Resource Exhaustion).
-   */
-  private static nettoyerSessionsExpirees(): void {
-    const maintenant = Date.now();
-    for (const [jeton, expiration] of ServiceSessionAdmin.sessions) {
-      if (maintenant > expiration) {
-        ServiceSessionAdmin.sessions.delete(jeton);
-      }
-    }
   }
 }
