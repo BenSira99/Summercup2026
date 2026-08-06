@@ -2,12 +2,10 @@ import 'server-only';
 import { Pool, neonConfig } from '@neondatabase/serverless';
 
 /**
- * Singleton de connexion Neon PostgreSQL Serverless (Vercel & Cloudflare)
+ * Singleton de connexion Neon PostgreSQL Serverless (Vercel & Cloudflare Workers)
  *
  * Utilise le driver HTTP/WebSocket natif de @neondatabase/serverless.
- * Sur Cloudflare/Vercel : poolQueryViaFetch = true utilise fetch() HTTP.
- *
- * DATABASE_URL : postgresql://user:pass@ep-xxx.c-2.eu-west-2.aws.neon.tech/neondb?sslmode=require
+ * Détection multi-source de DATABASE_URL pour compatibilité intégrale Cloudflare Workers env & process.env.
  */
 
 neonConfig.poolQueryViaFetch = true;
@@ -15,6 +13,27 @@ neonConfig.poolQueryViaFetch = true;
 export class GestionnaireBaseDeDonneesPostgres {
   private static pool: Pool | null = null;
   private static promesseInitialisation: Promise<Pool> | null = null;
+
+  private static obtenirUrlBaseDeDonnees(): string | null {
+    // 1. Détection standard process.env (Node.js & Vercel)
+    if (process.env.DATABASE_URL) {
+      return process.env.DATABASE_URL;
+    }
+
+    // 2. Détection contexte global Cloudflare Workers / Edge Runtime
+    const g = globalThis as any;
+    if (g.DATABASE_URL) {
+      return g.DATABASE_URL;
+    }
+    if (g.__env__ && g.__env__.DATABASE_URL) {
+      return g.__env__.DATABASE_URL;
+    }
+    if (g.process && g.process.env && g.process.env.DATABASE_URL) {
+      return g.process.env.DATABASE_URL;
+    }
+
+    return null;
+  }
 
   public static obtenirInstance(): Promise<Pool> {
     if (GestionnaireBaseDeDonneesPostgres.pool) {
@@ -26,7 +45,7 @@ export class GestionnaireBaseDeDonneesPostgres {
     }
 
     GestionnaireBaseDeDonneesPostgres.promesseInitialisation = (async () => {
-      const urlConnexion = process.env.DATABASE_URL;
+      const urlConnexion = GestionnaireBaseDeDonneesPostgres.obtenirUrlBaseDeDonnees();
       if (!urlConnexion) {
         throw new Error(
           "La variable d'environnement DATABASE_URL est requise pour se connecter à la base Neon PostgreSQL."
