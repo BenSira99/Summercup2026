@@ -467,33 +467,33 @@ export const DashboardGerant: React.FC = () => {
         </div>
       )}
 
-      {/* Header Pleine Largeur */}
-      <header className="w-full bg-white border-b border-slate-200/90 px-6 sm:px-10 py-5 flex flex-col sm:flex-row sm:items-center justify-between gap-4 shadow-xs">
-        <div className="flex items-center gap-4">
-          <div className="w-11 h-11 bg-amber-500 text-slate-950 rounded-2xl flex items-center justify-center font-black text-xl shadow-md border border-amber-300">
-            <Trophy className="w-6 h-6 text-slate-950" />
+      {/* Header Pleine Largeur Responsive */}
+      <header className="w-full bg-white border-b border-slate-200/90 px-4 sm:px-8 py-4 flex flex-col md:flex-row md:items-center justify-between gap-4 shadow-xs">
+        <div className="flex items-center gap-3">
+          <div className="w-10 h-10 sm:w-11 sm:h-11 bg-amber-500 text-slate-950 rounded-2xl flex items-center justify-center font-black text-lg sm:text-xl shadow-md border border-amber-300 shrink-0">
+            <Trophy className="w-5 h-5 sm:w-6 sm:h-6 text-slate-950" />
           </div>
-          <div>
-            <div className="flex items-center gap-2">
+          <div className="min-w-0">
+            <div className="flex items-center gap-2 flex-wrap">
               <span className="text-[10px] font-black uppercase tracking-widest bg-amber-100 text-amber-900 px-2.5 py-0.5 rounded-full border border-amber-200">
                 Administration Stand
               </span>
-              <span className="text-xs text-slate-400 font-semibold">• {configuration.nomStand}</span>
+              <span className="text-xs text-slate-500 font-semibold truncate">• {configuration.nomStand}</span>
             </div>
-            <h1 className="text-2xl font-black text-slate-900 tracking-tight leading-tight">{configuration.nomEvenement}</h1>
+            <h1 className="text-xl sm:text-2xl font-black text-slate-900 tracking-tight leading-tight truncate">{configuration.nomEvenement}</h1>
           </div>
         </div>
 
-        {/* Actions Rapides Pleine Largeur */}
-        <div className="flex items-center gap-2 flex-wrap">
-          <div className="hidden lg:flex items-center gap-2 bg-slate-100 px-4 py-2 rounded-xl text-xs text-slate-600 font-semibold border border-slate-200">
+        {/* Actions Rapides Responsive */}
+        <div className="flex items-center gap-2 flex-wrap sm:flex-nowrap">
+          <div className="hidden lg:flex items-center gap-2 bg-slate-100 px-3.5 py-2 rounded-xl text-xs text-slate-600 font-semibold border border-slate-200">
             <Calendar className="w-4 h-4 text-amber-600" />
             <span>Tirage : <strong className="text-slate-900">{configuration.dateTirage} à {configuration.heureTirage}</strong></span>
           </div>
 
           <button
             onClick={chargerDonnees}
-            className="p-2.5 bg-slate-100 hover:bg-slate-200 text-slate-700 rounded-xl border border-slate-200 transition-all"
+            className="p-2.5 bg-slate-100 hover:bg-slate-200 text-slate-700 rounded-xl border border-slate-200 transition-all shrink-0"
             title="Rafraîchir les données"
           >
             <RefreshCw className={`w-4 h-4 ${chargement ? 'animate-spin text-amber-600' : ''}`} />
@@ -501,7 +501,7 @@ export const DashboardGerant: React.FC = () => {
 
           <button
             onClick={deconnecterAdmin}
-            className="p-2.5 bg-rose-50 hover:bg-rose-100 text-rose-600 rounded-xl border border-rose-200 transition-all"
+            className="p-2.5 bg-rose-50 hover:bg-rose-100 text-rose-600 rounded-xl border border-rose-200 transition-all shrink-0"
             title="Se déconnecter"
           >
             <LogOut className="w-4 h-4" />
@@ -510,7 +510,7 @@ export const DashboardGerant: React.FC = () => {
           <button
             onClick={exporterPdfMultipage}
             disabled={exportPdfEnCours || participants.length === 0}
-            className="py-2.5 px-4 rounded-xl bg-slate-900 hover:bg-slate-800 text-white font-extrabold text-xs shadow-md transition-all flex items-center gap-2 border border-slate-700 disabled:opacity-40 disabled:cursor-not-allowed"
+            className="flex-1 sm:flex-initial py-2.5 px-3.5 rounded-xl bg-slate-900 hover:bg-slate-800 text-white font-extrabold text-xs shadow-md transition-all flex items-center justify-center gap-2 border border-slate-700 disabled:opacity-40 disabled:cursor-not-allowed"
           >
             {exportPdfEnCours ? (
               <>
@@ -520,7 +520,7 @@ export const DashboardGerant: React.FC = () => {
             ) : (
               <>
                 <FileText className="w-4 h-4 text-amber-400" />
-                <span>Export PDF Multipage</span>
+                <span>PDF Multipage</span>
               </>
             )}
           </button>
@@ -528,7 +528,7 @@ export const DashboardGerant: React.FC = () => {
           <button
             onClick={exporterCsv}
             disabled={participants.length === 0}
-            className="py-2.5 px-4 rounded-xl bg-linear-to-r from-amber-500 via-amber-600 to-yellow-600 hover:from-amber-600 hover:to-yellow-700 text-white font-extrabold text-xs shadow-md transition-all flex items-center gap-2 disabled:opacity-40 disabled:cursor-not-allowed"
+            className="flex-1 sm:flex-initial py-2.5 px-3.5 rounded-xl bg-linear-to-r from-amber-500 via-amber-600 to-yellow-600 hover:from-amber-600 hover:to-yellow-700 text-white font-extrabold text-xs shadow-md transition-all flex items-center justify-center gap-2 disabled:opacity-40 disabled:cursor-not-allowed"
           >
             <Download className="w-4 h-4 text-amber-100" />
             <span>Export CSV</span>
@@ -536,59 +536,59 @@ export const DashboardGerant: React.FC = () => {
         </div>
       </header>
 
-      {/* Navigation Onglets Pleine Largeur */}
-      <nav className="w-full bg-white border-b border-slate-200 px-6 sm:px-10 py-2.5 flex items-center gap-3 overflow-x-auto">
+      {/* Navigation Onglets Pleine Largeur - Défilement horizontal fluide sur mobile */}
+      <nav className="w-full bg-white border-b border-slate-200 px-4 sm:px-8 py-2 flex items-center gap-2 overflow-x-auto no-scrollbar scroll-smooth">
         <button
           onClick={() => setOngletActif('participants')}
-          className={`py-2.5 px-5 font-extrabold text-xs rounded-xl transition-all flex items-center gap-2 ${
+          className={`py-2.5 px-4 font-extrabold text-xs rounded-xl transition-all flex items-center gap-2 shrink-0 ${
             ongletActif === 'participants'
               ? 'bg-linear-to-r from-amber-500 to-yellow-600 text-white shadow-md'
               : 'bg-slate-100 text-slate-600 hover:text-slate-900 border border-slate-200'
           }`}
         >
           <Users className="w-4 h-4" />
-          <span>Liste des Inscrits ({participants.length})</span>
+          <span>Inscrits ({participants.length})</span>
         </button>
 
         <button
           onClick={() => setOngletActif('tirage')}
-          className={`py-2.5 px-5 font-extrabold text-xs rounded-xl transition-all flex items-center gap-2 ${
+          className={`py-2.5 px-4 font-extrabold text-xs rounded-xl transition-all flex items-center gap-2 shrink-0 ${
             ongletActif === 'tirage'
               ? 'bg-linear-to-r from-amber-500 to-yellow-600 text-white shadow-md'
               : 'bg-slate-100 text-slate-600 hover:text-slate-900 border border-slate-200'
           }`}
         >
           <Dices className="w-4 h-4 text-amber-300" />
-          <span>Tirer des Gagnants (Suspense)</span>
+          <span>Tirage au Sort</span>
         </button>
 
         <button
           onClick={() => setOngletActif('configuration')}
-          className={`py-2.5 px-5 font-extrabold text-xs rounded-xl transition-all flex items-center gap-2 ${
+          className={`py-2.5 px-4 font-extrabold text-xs rounded-xl transition-all flex items-center gap-2 shrink-0 ${
             ongletActif === 'configuration'
               ? 'bg-linear-to-r from-amber-500 to-yellow-600 text-white shadow-md'
               : 'bg-slate-100 text-slate-600 hover:text-slate-900 border border-slate-200'
           }`}
         >
           <Settings className="w-4 h-4" />
-          <span>Réglages & Sécurité</span>
+          <span>Réglages</span>
         </button>
 
         <button
           onClick={() => setOngletActif('affiche')}
-          className={`py-2.5 px-5 font-extrabold text-xs rounded-xl transition-all flex items-center gap-2 ${
+          className={`py-2.5 px-4 font-extrabold text-xs rounded-xl transition-all flex items-center gap-2 shrink-0 ${
             ongletActif === 'affiche'
               ? 'bg-linear-to-r from-amber-500 to-yellow-600 text-white shadow-md'
               : 'bg-slate-100 text-slate-600 hover:text-slate-900 border border-slate-200'
           }`}
         >
           <QrCode className="w-4 h-4" />
-          <span>Affiche A4 & Gros QR Code Stand</span>
+          <span>Affiche & QR Code</span>
         </button>
       </nav>
 
-      {/* Contenu Principal */}
-      <main className="flex-1 w-full px-6 sm:px-10 py-8 space-y-6">
+      {/* Contenu Principal avec Padding Adaptatif */}
+      <main className="flex-1 w-full px-3 sm:px-8 py-4 sm:py-8 space-y-6">
         {/* Onglet 1 : Liste des Inscrits */}
         {ongletActif === 'participants' && (
           <div className="space-y-4 w-full">
