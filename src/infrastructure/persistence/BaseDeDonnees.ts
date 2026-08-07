@@ -65,7 +65,7 @@ export class GestionnaireBaseDeDonneesPostgres {
   }
 
   private static async initialiserTables(pool: Pool): Promise<void> {
-    // Table participants PostgreSQL avec contraintes CHECK & UNIQUE
+    // Table participants PostgreSQL avec contraintes CHECK & UNIQUE et champ a_compte_cih
     await pool.query(`
       CREATE TABLE IF NOT EXISTS participants (
         id UUID PRIMARY KEY,
@@ -76,10 +76,16 @@ export class GestionnaireBaseDeDonneesPostgres {
         numero_ticket VARCHAR(255) NOT NULL UNIQUE,
         date_inscription VARCHAR(255) NOT NULL,
         est_gagnant BOOLEAN NOT NULL DEFAULT FALSE,
+        a_compte_cih BOOLEAN NOT NULL DEFAULT FALSE,
         CONSTRAINT check_nom_au_moins_2_lettres CHECK (LENGTH(TRIM(nom)) >= 2),
         CONSTRAINT check_prenom_au_moins_2_lettres CHECK (LENGTH(TRIM(prenom)) >= 2),
         CONSTRAINT check_numero_ticket_format CHECK (numero_ticket LIKE 'TK-%')
       )
+    `);
+
+    // Migration automatique idempotente : Ajout de la colonne a_compte_cih si la table existait déjà
+    await pool.query(`
+      ALTER TABLE participants ADD COLUMN IF NOT EXISTS a_compte_cih BOOLEAN NOT NULL DEFAULT FALSE
     `);
 
     await pool.query(`

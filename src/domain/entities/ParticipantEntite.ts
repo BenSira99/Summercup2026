@@ -12,6 +12,7 @@ export interface ParametresParticipant {
   numeroTicket?: string;
   dateInscription?: Date;
   estGagnant?: boolean;
+  aCompteCih?: boolean;
 }
 
 export class ParticipantEntite {
@@ -23,6 +24,7 @@ export class ParticipantEntite {
   public readonly numeroTicket: string;
   public readonly dateInscription: Date;
   public estGagnant: boolean;
+  public readonly aCompteCih: boolean;
 
   constructor(parametres: ParametresParticipant) {
     this.validerChampsObliques(parametres);
@@ -35,6 +37,7 @@ export class ParticipantEntite {
     this.numeroTicket = parametres.numeroTicket || this.genererNumeroTicket();
     this.dateInscription = parametres.dateInscription || new Date();
     this.estGagnant = parametres.estGagnant || false;
+    this.aCompteCih = parametres.aCompteCih || false;
   }
 
   private validerChampsObliques(parametres: ParametresParticipant): void {

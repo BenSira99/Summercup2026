@@ -27,7 +27,7 @@ export async function POST(requete: NextRequest) {
     }
 
     const corps = await requete.json();
-    const { nom, prenom, telephone, email } = corps;
+    const { nom, prenom, telephone, email, aCompteCih } = corps;
 
     const depotParticipant = new DepotParticipantMySql();
     const depotConfiguration = new DepotConfigurationMySql();
@@ -39,6 +39,7 @@ export async function POST(requete: NextRequest) {
       prenom,
       telephone,
       email,
+      aCompteCih: Boolean(aCompteCih),
     });
 
     return NextResponse.json({
@@ -50,6 +51,7 @@ export async function POST(requete: NextRequest) {
         numeroTicket: ticket.numeroTicket,
         telephone: participant.telephone,
         email: participant.email,
+        aCompteCih: participant.aCompteCih,
         dateInscription: participant.dateInscription.toISOString(),
         estGagnant: participant.estGagnant,
       },
@@ -89,6 +91,7 @@ export async function GET() {
         numeroTicket: p.numeroTicket,
         dateInscription: p.dateInscription,
         estGagnant: p.estGagnant,
+        aCompteCih: p.aCompteCih,
       })),
     });
   } catch (erreur: any) {

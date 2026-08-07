@@ -18,7 +18,7 @@ export class ExporterParticipantsUseCase {
   public async executerEnFormatCsv(): Promise<string> {
     const participants = await this.depotParticipant.obtenirTousLesParticipants();
 
-    const enTetes = ["ID", "Numéro Ticket", "Nom", "Prénom", "Téléphone", "Email", "Date Inscription", "Statut Gagnant"];
+    const enTetes = ["ID", "Numéro Ticket", "Nom", "Prénom", "Téléphone", "Email", "Compte CIH", "Date Inscription", "Statut Gagnant"];
     const lignesCsv: string[] = [enTetes.join(",")];
 
     for (const p of participants) {
@@ -29,6 +29,7 @@ export class ExporterParticipantsUseCase {
         this.echapperCelluleCsv(p.prenom),
         this.echapperCelluleCsv(p.telephone || ''),
         this.echapperCelluleCsv(p.email || ''),
+        this.echapperCelluleCsv(p.aCompteCih ? "Oui" : "Non"),
         this.echapperCelluleCsv(new Date(p.dateInscription).toLocaleString('fr-FR')),
         this.echapperCelluleCsv(p.estGagnant ? "GAGNANT" : "Participant")
       ];

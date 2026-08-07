@@ -7,7 +7,7 @@ export class ServiceExportPdfParticipants {
     config: ConfigurationAdmin
   ): Promise<void> {
     const doc = new jsPDF({
-      orientation: 'landscape', // Format Paysage pour afficher confortablement toutes les colonnes (Nom, Prénom, Téléphone, Email, Ticket, Date)
+      orientation: 'landscape', // Format Paysage pour afficher confortablement toutes les colonnes (Nom, Prénom, Téléphone, Email, CIH, Ticket, Date)
       unit: 'mm',
       format: 'a4',
     });
@@ -64,7 +64,7 @@ export class ServiceExportPdfParticipants {
       doc.setLineWidth(0.6);
       doc.line(margeGauche, 32, largeurPage - margeDroite, 32);
 
-      // 3. En-tête du Tableau avec Téléphone & Email
+      // 3. En-tête du Tableau avec Téléphone, Email & Compte CIH
       let currentY = 36;
       doc.setFillColor(30, 41, 59); // Slate-800
       doc.rect(margeGauche, currentY, largeurUtile, enteteHauteur, 'F');
@@ -74,13 +74,14 @@ export class ServiceExportPdfParticipants {
       doc.setTextColor(255, 255, 255);
 
       // Largeurs des colonnes en paysage (Total 273mm)
-      const wPos = 10;
-      const wTicket = 38;
-      const wNom = 52;
-      const wTel = 42;
-      const wEmail = 64;
+      const wPos = 8;
+      const wTicket = 34;
+      const wNom = 48;
+      const wTel = 36;
+      const wEmail = 55;
+      const wCih = 24;
       const wDate = 42;
-      const wStatut = 25;
+      const wStatut = 26;
 
       let posX = margeGauche + 2;
       doc.text('#', posX, currentY + 6);
@@ -95,8 +96,11 @@ export class ServiceExportPdfParticipants {
       doc.text('TÉLÉPHONE', posX, currentY + 6);
       posX += wTel;
 
-      doc.text('ADRESSE EMAIL', posX, currentY + 6);
+      doc.text('EMAIL', posX, currentY + 6);
       posX += wEmail;
+
+      doc.text('COMPTE CIH', posX, currentY + 6);
+      posX += wCih;
 
       doc.text('DATE D\'INSCRIPTION', posX, currentY + 6);
       posX += wDate;
@@ -142,7 +146,7 @@ export class ServiceExportPdfParticipants {
         doc.setFont('helvetica', 'bold');
         doc.setTextColor(15, 23, 42);
         const nomComplet = `${p.prenom} ${p.nom}`;
-        doc.text(nomComplet.length > 25 ? nomComplet.substring(0, 23) + '...' : nomComplet, posX, currentY + 5.5);
+        doc.text(nomComplet.length > 22 ? nomComplet.substring(0, 20) + '...' : nomComplet, posX, currentY + 5.5);
         posX += wNom;
 
         // Téléphone
@@ -155,8 +159,20 @@ export class ServiceExportPdfParticipants {
         doc.setFont('helvetica', 'normal');
         doc.setTextColor(71, 85, 105);
         const mail = p.email || '-';
-        doc.text(mail.length > 32 ? mail.substring(0, 30) + '...' : mail, posX, currentY + 5.5);
+        doc.text(mail.length > 26 ? mail.substring(0, 24) + '...' : mail, posX, currentY + 5.5);
         posX += wEmail;
+
+        // Compte CIH (Oui / Non)
+        doc.setFont('helvetica', 'bold');
+        if (p.aCompteCih) {
+          doc.setTextColor(16, 185, 129); // Vert Émeraude
+          doc.text('Oui (CIH)', posX, currentY + 5.5);
+        } else {
+          doc.setFont('helvetica', 'normal');
+          doc.setTextColor(148, 163, 184);
+          doc.text('Non', posX, currentY + 5.5);
+        }
+        posX += wCih;
 
         // Date Inscription
         doc.setFont('helvetica', 'normal');

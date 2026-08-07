@@ -1,7 +1,7 @@
 'use client';
 
 import React, { useState } from 'react';
-import { User, Sparkles, Trophy, Loader2, ArrowRight, ShieldCheck, Gift, Phone, Mail } from 'lucide-react';
+import { User, Sparkles, Trophy, Loader2, ArrowRight, ShieldCheck, Gift, Phone, Mail, CreditCard, CheckSquare, Square } from 'lucide-react';
 import { TicketParticipationImage } from './TicketParticipationImage';
 import { BoutonTelechargerTicket } from './BoutonTelechargerTicket';
 
@@ -24,6 +24,7 @@ export const FormulaireParticipation: React.FC<ProprietesFormulaireParticipation
   const [prenom, setPrenom] = useState('');
   const [telephone, setTelephone] = useState('');
   const [email, setEmail] = useState('');
+  const [aCompteCih, setACompteCih] = useState(false);
 
   const [enCoursDeSoumission, setEnCoursDeSoumission] = useState(false);
   const [messageErreur, setMessageErreur] = useState<string | null>(null);
@@ -41,7 +42,6 @@ export const FormulaireParticipation: React.FC<ProprietesFormulaireParticipation
   // Filtrer les caractères non autorisés dans le NOM (lettres, tirets, apostrophes uniquement, AUCUN ESPACE)
   const gererChangementNom = (e: React.ChangeEvent<HTMLInputElement>) => {
     const val = e.target.value.replace(/\s/g, ''); // Retirer tous les espaces
-    // Filtrer les symboles et chiffres
     const valFiltree = val.replace(/[^a-zA-Zà-öø-ÿÀ-ÖØ-ßÇç'-]/g, '');
     setNom(valFiltree);
   };
@@ -137,6 +137,7 @@ export const FormulaireParticipation: React.FC<ProprietesFormulaireParticipation
           prenom: prenomNet,
           telephone: telNet,
           email: emailNet,
+          aCompteCih: aCompteCih,
         }),
       });
 
@@ -160,7 +161,7 @@ export const FormulaireParticipation: React.FC<ProprietesFormulaireParticipation
     return (
       <div className="w-full max-w-md mx-auto space-y-6 animate-in fade-in zoom-in duration-300 font-sans">
         <div className="text-center space-y-2">
-          <div className="inline-flex items-center gap-2 px-4 py-1.5 rounded-full bg-emerald-100 border border-emerald-300 text-emerald-800 text-xs font-bold shadow-sm">
+          <div className="inline-flex items-center gap-2 px-4 py-1.5 rounded-full bg-emerald-100 border border-emerald-300 text-emerald-800 text-xs font-bold shadow-xs">
             <Sparkles className="w-4 h-4 text-emerald-600" />
             <span>Félicitations ! Votre ticket est prêt</span>
           </div>
@@ -193,6 +194,7 @@ export const FormulaireParticipation: React.FC<ProprietesFormulaireParticipation
               setPrenom('');
               setTelephone('');
               setEmail('');
+              setACompteCih(false);
             }}
             className="w-full py-3 px-4 text-xs font-semibold text-slate-500 hover:text-slate-800 transition-colors text-center"
           >
@@ -253,7 +255,7 @@ export const FormulaireParticipation: React.FC<ProprietesFormulaireParticipation
         </div>
       )}
 
-      {/* Formulaire de participation complet (Prénom, Nom, Téléphone, Email) */}
+      {/* Formulaire de participation */}
       <form onSubmit={soumettreFormulaire} className="space-y-4">
         
         {/* Champ Nom (1 seul mot, la touche espace est bloquée) */}
@@ -331,6 +333,40 @@ export const FormulaireParticipation: React.FC<ProprietesFormulaireParticipation
               className="w-full pl-9 pr-3 py-3 text-sm rounded-xl border border-slate-200 focus:border-amber-500 focus:ring-2 focus:ring-amber-200 transition-all bg-slate-50/50 font-medium text-slate-900 placeholder:text-slate-400 outline-none"
             />
             <Mail className="w-4 h-4 text-slate-400 absolute left-3 top-3.5" />
+          </div>
+        </div>
+
+        {/* Case à cocher Compte CIH (Booléenne, par défaut false) */}
+        <div
+          onClick={() => setACompteCih(!aCompteCih)}
+          className={`p-3.5 rounded-2xl border transition-all cursor-pointer select-none flex items-center justify-between gap-3 ${
+            aCompteCih
+              ? 'bg-amber-50/90 border-amber-400 shadow-xs'
+              : 'bg-slate-50/60 border-slate-200 hover:border-slate-300'
+          }`}
+        >
+          <div className="flex items-center gap-3">
+            <div className={`w-8 h-8 rounded-xl flex items-center justify-center shrink-0 ${
+              aCompteCih ? 'bg-amber-500 text-white' : 'bg-slate-200 text-slate-500'
+            }`}>
+              <CreditCard className="w-4 h-4" />
+            </div>
+            <div>
+              <p className="text-xs font-extrabold text-slate-900 leading-snug">
+                Possédez-vous un compte CIH Bank ?
+              </p>
+              <p className="text-[10px] text-slate-500 font-medium">
+                {aCompteCih ? "Oui, je suis client CIH Bank" : "Non, pas encore de compte CIH"}
+              </p>
+            </div>
+          </div>
+
+          <div className="shrink-0 text-amber-600">
+            {aCompteCih ? (
+              <CheckSquare className="w-5 h-5 text-amber-600" />
+            ) : (
+              <Square className="w-5 h-5 text-slate-300" />
+            )}
           </div>
         </div>
 

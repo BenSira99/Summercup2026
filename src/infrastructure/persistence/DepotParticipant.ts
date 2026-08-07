@@ -11,6 +11,7 @@ interface LigneParticipant {
   numero_ticket: string;
   date_inscription: string;
   est_gagnant: boolean;
+  a_compte_cih?: boolean;
 }
 
 export class DepotParticipantPostgres implements DepotParticipantInterface {
@@ -22,8 +23,8 @@ export class DepotParticipantPostgres implements DepotParticipantInterface {
       : new Date(participant.dateInscription).toISOString();
 
     await db.query(
-      `INSERT INTO participants (id, nom, prenom, telephone, email, numero_ticket, date_inscription, est_gagnant)
-       VALUES ($1, $2, $3, $4, $5, $6, $7, $8)`,
+      `INSERT INTO participants (id, nom, prenom, telephone, email, numero_ticket, date_inscription, est_gagnant, a_compte_cih)
+       VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9)`,
       [
         participant.id,
         participant.nom,
@@ -33,6 +34,7 @@ export class DepotParticipantPostgres implements DepotParticipantInterface {
         participant.numeroTicket,
         dateIso,
         participant.estGagnant,
+        participant.aCompteCih,
       ]
     );
 
@@ -53,6 +55,7 @@ export class DepotParticipantPostgres implements DepotParticipantInterface {
       numeroTicket: ligne.numero_ticket,
       dateInscription: new Date(ligne.date_inscription),
       estGagnant: Boolean(ligne.est_gagnant),
+      aCompteCih: Boolean(ligne.a_compte_cih),
     });
   }
 
@@ -61,7 +64,7 @@ export class DepotParticipantPostgres implements DepotParticipantInterface {
 
     const resultat = await db.query<LigneParticipant>(
       `SELECT id, nom, prenom, COALESCE(telephone, '') as telephone, COALESCE(email, '') as email,
-              numero_ticket, date_inscription, est_gagnant
+              numero_ticket, date_inscription, est_gagnant, COALESCE(a_compte_cih, FALSE) as a_compte_cih
        FROM participants ORDER BY date_inscription DESC`
     );
 
@@ -77,7 +80,7 @@ export class DepotParticipantPostgres implements DepotParticipantInterface {
 
     const resultat = await db.query<LigneParticipant>(
       `SELECT id, nom, prenom, COALESCE(telephone, '') as telephone, COALESCE(email, '') as email,
-              numero_ticket, date_inscription, est_gagnant
+              numero_ticket, date_inscription, est_gagnant, COALESCE(a_compte_cih, FALSE) as a_compte_cih
        FROM participants WHERE id = $1`,
       [id]
     );
@@ -91,7 +94,7 @@ export class DepotParticipantPostgres implements DepotParticipantInterface {
 
     const resultat = await db.query<LigneParticipant>(
       `SELECT id, nom, prenom, COALESCE(telephone, '') as telephone, COALESCE(email, '') as email,
-              numero_ticket, date_inscription, est_gagnant
+              numero_ticket, date_inscription, est_gagnant, COALESCE(a_compte_cih, FALSE) as a_compte_cih
        FROM participants WHERE numero_ticket = $1`,
       [numeroTicket]
     );
