@@ -55,7 +55,7 @@ export async function POST(requete: NextRequest) {
     if (!listeGagnants || listeGagnants.length === 0) {
       return NextResponse.json({
         succes: false,
-        erreur: "Aucun participant éligible pour le tirage au sort.",
+        erreur: "Aucun participant inscrit aujourd'hui n'est disponible pour le tirage au sort.",
       }, { status: 400 });
     }
 

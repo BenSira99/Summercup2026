@@ -71,6 +71,22 @@ export class DepotParticipantPostgres implements DepotParticipantInterface {
     return resultat.rows.map((ligne) => DepotParticipantPostgres.convertir(ligne));
   }
 
+  /**
+   * Obtient uniquement les participants inscrits le même jour que la date de référence (par défaut aujourd'hui)
+   */
+  public async obtenirParticipantsDuJour(dateRef: Date = new Date()): Promise<ParticipantEntite[]> {
+    const tous = await this.obtenirTousLesParticipants();
+
+    return tous.filter((p) => {
+      const d = p.dateInscription instanceof Date ? p.dateInscription : new Date(p.dateInscription);
+      return (
+        d.getFullYear() === dateRef.getFullYear() &&
+        d.getMonth() === dateRef.getMonth() &&
+        d.getDate() === dateRef.getDate()
+      );
+    });
+  }
+
   public async obtenirTous(): Promise<ParticipantEntite[]> {
     return this.obtenirTousLesParticipants();
   }
@@ -124,14 +140,16 @@ export class DepotParticipantPostgres implements DepotParticipantInterface {
   }
 
   public async selectionnerPlusieursGagnantsAleatoires(nombre: number): Promise<ParticipantEntite[]> {
-    // 1. Réinitialiser les anciens gagnants au début du tirage pour que TOUS les inscrits soient éligibles
-    await this.reinitialiserGagnants();
+    // 1. Le tirage au sort s'effectue EXCLUSIVEMENT sur les inscrits du MÊME JOUR (Aujourd'hui)
+    const inscritsDuJour = await this.obtenirParticipantsDuJour();
+    if (inscritsDuJour.length === 0) return [];
 
-    const tous = await this.obtenirTousLesParticipants();
-    if (tous.length === 0) return [];
+    // 2. Privilégier les inscrits du jour qui n'ont PAS ENCORE GAGNÉ (est_gagnant = false)
+    const nonGagnantsDuJour = inscritsDuJour.filter((p) => !p.estGagnant);
+    const listeEligibles = nonGagnantsDuJour.length > 0 ? nonGagnantsDuJour : inscritsDuJour;
 
-    // 2. Mélange de Fisher-Yates sur l'ensemble complet des participants
-    const melanges = [...tous];
+    // 3. Mélange de Fisher-Yates sur les candidats éligibles du jour
+    const melanges = [...listeEligibles];
     for (let i = melanges.length - 1; i > 0; i--) {
       const j = Math.floor(Math.random() * (i + 1));
       [melanges[i], melanges[j]] = [melanges[j], melanges[i]];

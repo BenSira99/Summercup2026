@@ -1,7 +1,7 @@
 'use client';
 
 import React, { useState, useEffect } from 'react';
-import { Trophy, Dices, Eye, Sparkles, CheckCircle2, Lock, Unlock, Gift, Award, Crown, RefreshCw, Medal, AlertTriangle, Users, Minus, Plus } from 'lucide-react';
+import { Trophy, Dices, Eye, Sparkles, CheckCircle2, Lock, Unlock, Gift, Award, Crown, RefreshCw, Medal, AlertTriangle, Users, Minus, Plus, Calendar } from 'lucide-react';
 import canvasConfetti from 'canvas-confetti';
 import { toast } from 'sonner';
 
@@ -18,13 +18,14 @@ export interface GagnantTirageSuspense {
 export const TirageAuSortAdminSuspense: React.FC = () => {
   const [nombreGagnants, setNombreGagnants] = useState<number>(1);
   const [totalParticipants, setTotalParticipants] = useState<number>(0);
+  const [totalParticipantsJour, setTotalParticipantsJour] = useState<number>(0);
   const [lotsParRang, setLotsParRang] = useState<string[]>([]);
   const [chargement, setChargement] = useState<boolean>(false);
   const [gagnants, setGagnants] = useState<GagnantTirageSuspense[]>([]);
   const [masques, setMasques] = useState<Record<string, boolean>>({});
   const [erreur, setErreur] = useState<string | null>(null);
 
-  // Charger le nombre total de participants inscrits et la config des lots
+  // Charger le nombre total de participants inscrits et filtrer par inscrits du jour même
   const chargerDonneesInitiales = async () => {
     try {
       const [repPart, repConfig] = await Promise.all([
@@ -34,8 +35,19 @@ export const TirageAuSortAdminSuspense: React.FC = () => {
 
       if (repPart.ok) {
         const dataP = await repPart.json();
-        const total = dataP.total || (dataP.participants ? dataP.participants.length : 0);
-        setTotalParticipants(total);
+        const liste = dataP.participants || [];
+        setTotalParticipants(dataP.total || liste.length);
+
+        const aujourdhui = new Date();
+        const duJour = liste.filter((p: any) => {
+          const d = new Date(p.dateInscription);
+          return (
+            d.getFullYear() === aujourdhui.getFullYear() &&
+            d.getMonth() === aujourdhui.getMonth() &&
+            d.getDate() === aujourdhui.getDate()
+          );
+        });
+        setTotalParticipantsJour(duJour.length);
       }
 
       if (repConfig.ok) {
@@ -59,7 +71,7 @@ export const TirageAuSortAdminSuspense: React.FC = () => {
     chargerDonneesInitiales();
   }, []);
 
-  // Validation du nombre de gagnants avec notification Sonner Toast
+  // Validation du nombre de gagnants restreint aux inscrits du jour avec notification Toast
   const validerEtChangerNombreGagnants = (nouvelleValeur: number) => {
     if (isNaN(nouvelleValeur) || nouvelleValeur < 1) {
       setNombreGagnants(1);
@@ -67,26 +79,26 @@ export const TirageAuSortAdminSuspense: React.FC = () => {
       return;
     }
 
-    if (totalParticipants > 0 && nouvelleValeur > totalParticipants) {
-      toast.error(`Sélection invalide : vous demandez ${nouvelleValeur} gagnant(s) alors qu'il n'y a que ${totalParticipants} inscrit(s) au total.`, {
+    if (totalParticipantsJour > 0 && nouvelleValeur > totalParticipantsJour) {
+      toast.error(`Sélection invalide : vous demandez ${nouvelleValeur} gagnant(s) alors qu'il n'y a que ${totalParticipantsJour} inscrit(s) aujourd'hui.`, {
         duration: 4000,
       });
-      setNombreGagnants(totalParticipants);
+      setNombreGagnants(totalParticipantsJour);
       return;
     }
 
     setNombreGagnants(nouvelleValeur);
   };
 
-  // Déclencher le tirage au sort (Brassage de 100% des inscrits)
+  // Déclencher le tirage au sort (Brassage des inscrits du jour même)
   const lancerTirage = async () => {
-    if (totalParticipants === 0) {
-      toast.error("Impossible de lancer le tirage : aucun inscrit enregistré.");
+    if (totalParticipantsJour === 0) {
+      toast.error("Impossible de lancer le tirage : aucun inscrit enregistré aujourd'hui.");
       return;
     }
 
-    if (nombreGagnants > totalParticipants) {
-      toast.error(`Erreur de validation : ${nombreGagnants} gagnants demandés mais seulement ${totalParticipants} participant(s) inscrit(s).`, {
+    if (nombreGagnants > totalParticipantsJour) {
+      toast.error(`Erreur de validation : ${nombreGagnants} gagnants demandés mais seulement ${totalParticipantsJour} inscrit(s) aujourd'hui.`, {
         duration: 5000,
       });
       return;
@@ -122,7 +134,7 @@ export const TirageAuSortAdminSuspense: React.FC = () => {
       });
       setMasques(masquesInit);
 
-      toast.success(`Tirage réussi ! ${liste.length} gagnant(s) sélectionné(s) par classement. Cliquez sur les cartes pour révéler !`);
+      toast.success(`Tirage réussi ! ${liste.length} gagnant(s) sélectionné(s) parmi les inscrits du jour. Cliquez sur les cartes pour révéler !`);
 
       // Mettre à jour les stats
       chargerDonneesInitiales();
@@ -222,14 +234,17 @@ export const TirageAuSortAdminSuspense: React.FC = () => {
               <Dices className="w-6 h-6 text-slate-950" />
             </div>
             <div>
-              <div className="flex items-center gap-2">
-                <h2 className="text-xl sm:text-2xl font-black text-slate-900 tracking-tight">Tirage au Sort</h2>
-                <span className="inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full bg-slate-100 text-slate-700 text-xs font-bold border border-slate-200">
-                  <Users className="w-3.5 h-3.5 text-amber-600" />
-                  <span>{totalParticipants} inscrit(s)</span>
+              <div className="flex items-center gap-2 flex-wrap">
+                <h2 className="text-xl sm:text-2xl font-black text-slate-900 tracking-tight">Tirage au Sort du Jour</h2>
+                <span className="inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full bg-amber-100 text-amber-900 text-xs font-black border border-amber-200">
+                  <Calendar className="w-3.5 h-3.5 text-amber-600" />
+                  <span>{totalParticipantsJour} inscrit(s) aujourd'hui</span>
                 </span>
+                <span className="text-xs text-slate-400 font-medium">({totalParticipants} au total)</span>
               </div>
-              <p className="text-xs text-slate-500 font-medium mt-0.5">Saisissez le nombre de gagnants et révélez-les un par un !</p>
+              <p className="text-xs text-slate-500 font-medium mt-0.5">
+                Seuls les participants inscrits aujourd'hui sont éligibles pour ce tirage.
+              </p>
             </div>
           </div>
 
@@ -250,10 +265,10 @@ export const TirageAuSortAdminSuspense: React.FC = () => {
               <input
                 type="number"
                 min={1}
-                max={totalParticipants || 1}
+                max={totalParticipantsJour || 1}
                 value={nombreGagnants}
                 onChange={(e) => validerEtChangerNombreGagnants(parseInt(e.target.value, 10))}
-                className="w-12 text-center text-sm font-black text-slate-900 outline-none bg-transparent"
+                className="w-12 text-center text-sm font-black text-slate-900 outline-none"
               />
 
               <button
@@ -265,59 +280,42 @@ export const TirageAuSortAdminSuspense: React.FC = () => {
               </button>
             </div>
 
-            {/* Boutons Raccourcis Rapides (1, 2, 3, 5, 10) */}
+            {/* Raccourcis Rapides 1, 3, 5 */}
             <div className="flex items-center gap-1">
-              {[1, 2, 3, 5, 10].map((num) => {
-                const estDesactive = totalParticipants > 0 && num > totalParticipants;
-                const estActif = nombreGagnants === num;
-
-                return (
-                  <button
-                    key={num}
-                    type="button"
-                    disabled={estDesactive || totalParticipants === 0}
-                    onClick={() => validerEtChangerNombreGagnants(num)}
-                    className={`w-8 h-8 rounded-lg font-black text-xs transition-all ${
-                      estActif && !estDesactive
-                        ? 'bg-amber-500 text-slate-950 shadow-md border border-amber-300 scale-105'
-                        : estDesactive || totalParticipants === 0
-                        ? 'bg-slate-200/50 text-slate-400 border border-slate-200 cursor-not-allowed opacity-40'
-                        : 'bg-white text-slate-700 hover:bg-slate-200 border border-slate-200'
-                    }`}
-                  >
-                    {num}
-                  </button>
-                );
-              })}
+              {[1, 3, 5].map((num) => (
+                <button
+                  key={num}
+                  type="button"
+                  onClick={() => validerEtChangerNombreGagnants(num)}
+                  className={`px-3 py-1.5 rounded-xl text-xs font-bold transition-all ${
+                    nombreGagnants === num
+                      ? 'bg-amber-500 text-white shadow-xs'
+                      : 'bg-white hover:bg-slate-100 text-slate-700 border border-slate-200'
+                  }`}
+                >
+                  {num}
+                </button>
+              ))}
             </div>
           </div>
         </div>
 
-        {/* Bouton de Lancement du Tirage */}
+        {/* Bouton d'action principal */}
         <div className="flex flex-col sm:flex-row items-center justify-between gap-4">
           <button
             onClick={lancerTirage}
-            disabled={chargement || totalParticipants === 0}
-            className={`w-full sm:w-auto flex-1 py-4 px-8 rounded-2xl font-black text-sm shadow-xl transition-all flex items-center justify-center gap-3 border ${
-              totalParticipants === 0
-                ? 'bg-slate-200 text-slate-400 border-slate-300 cursor-not-allowed shadow-none'
-                : 'bg-linear-to-r from-amber-500 via-amber-600 to-yellow-600 hover:from-amber-600 hover:to-yellow-700 text-white shadow-amber-500/20 border-amber-300/40'
-            }`}
+            disabled={chargement || totalParticipantsJour === 0}
+            className="w-full sm:w-auto py-4 px-8 rounded-2xl bg-linear-to-r from-amber-500 via-amber-600 to-yellow-600 hover:from-amber-600 hover:to-yellow-700 text-white font-extrabold text-sm shadow-xl shadow-amber-500/25 transition-all transform active:scale-95 flex items-center justify-center gap-2 border border-amber-300/40 disabled:opacity-40 disabled:cursor-not-allowed"
           >
             {chargement ? (
               <>
-                <RefreshCw className="w-5 h-5 animate-spin text-amber-100" />
-                <span>TIRAGE ALÉATOIRE EN COURS...</span>
-              </>
-            ) : totalParticipants === 0 ? (
-              <>
-                <Users className="w-5 h-5 text-slate-400" />
-                <span>AUCUN INSCRIT POUR LE TIRAGE</span>
+                <RefreshCw className="w-5 h-5 animate-spin text-white" />
+                <span>Tirage du Jour en Cours...</span>
               </>
             ) : (
               <>
-                <Dices className="w-5 h-5 text-amber-200" />
-                <span>LANCER LE TIRAGE DE {nombreGagnants} GAGNANT(S)</span>
+                <Dices className="w-5 h-5 text-amber-100" />
+                <span>Lancer le Tirage du Jour ({nombreGagnants} Gagnant{nombreGagnants > 1 ? 's' : ''})</span>
               </>
             )}
           </button>
@@ -325,14 +323,15 @@ export const TirageAuSortAdminSuspense: React.FC = () => {
           {gagnants.length > 0 && nombreDeMasquesRestants > 0 && (
             <button
               onClick={toutReveler}
-              className="w-full sm:w-auto py-4 px-6 rounded-2xl bg-slate-900 hover:bg-slate-800 text-white font-extrabold text-xs shadow-md transition-all flex items-center justify-center gap-2"
+              className="py-3 px-5 rounded-2xl bg-slate-900 hover:bg-slate-800 text-amber-400 font-extrabold text-xs shadow-md transition-all flex items-center gap-2 border border-slate-700"
             >
               <Eye className="w-4 h-4 text-amber-400" />
-              <span>Tout Dévoiler ({nombreDeMasquesRestants} masqué(s))</span>
+              <span>Tout Dévoiler ({nombreDeMasquesRestants} restant{nombreDeMasquesRestants > 1 ? 's' : ''})</span>
             </button>
           )}
         </div>
 
+        {/* Bannières d'erreur / Information */}
         {erreur && (
           <div className="p-4 bg-rose-50 border border-rose-200 text-rose-800 text-xs font-bold rounded-2xl flex items-center gap-2">
             <AlertTriangle className="w-4 h-4 text-rose-600 shrink-0" />
@@ -341,105 +340,75 @@ export const TirageAuSortAdminSuspense: React.FC = () => {
         )}
       </div>
 
-      {/* Grille des Cartes Gagnants avec Effet de Suspense & Lot Spécifique */}
+      {/* Cartes de Gagnants avec Effet de Révélation et Suspense */}
       {gagnants.length > 0 && (
         <div className="space-y-4">
           <div className="flex items-center justify-between px-2">
-            <h3 className="text-sm font-black text-slate-800 uppercase tracking-wider flex items-center gap-2">
-              <Trophy className="w-4 h-4 text-amber-600" />
-              <span>Gagnants Sélectionnés — Cliquez pour Dévoiler</span>
+            <h3 className="text-lg font-black text-slate-900 flex items-center gap-2">
+              <Trophy className="w-5 h-5 text-amber-500" />
+              <span>Résultats du Tirage du Jour ({gagnants.length})</span>
             </h3>
-            <span className="text-xs font-bold text-slate-500">
-              {gagnants.length - nombreDeMasquesRestants} / {gagnants.length} Révélé(s)
-            </span>
+            <span className="text-xs text-slate-500 font-medium">Cliquez sur chaque carte pour lever le suspense</span>
           </div>
 
           <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
             {gagnants.map((g) => {
               const estMasque = masques[g.id];
               const badge = obtenirBadgeRang(g.rang);
-              const BadgeIcone = badge.icon;
-              const lotGagne = obtenirLotDuRang(g.rang);
+              const IconBadge = badge.icon;
+              const lotAttr = obtenirLotDuRang(g.rang);
 
               return (
                 <div
                   key={g.id}
                   onClick={() => revelerGagnant(g.id)}
-                  className={`relative rounded-3xl p-6 transition-all duration-300 cursor-pointer overflow-hidden border-2 shadow-md ${
+                  className={`rounded-3xl p-6 border-2 transition-all cursor-pointer relative overflow-hidden select-none shadow-md ${
                     estMasque
-                      ? 'bg-slate-900 border-amber-400/50 hover:border-amber-400 hover:scale-[1.02]'
-                      : 'bg-white border-amber-300 shadow-xl'
+                      ? 'bg-slate-950 border-amber-400/80 hover:border-amber-400 text-white'
+                      : 'bg-white border-amber-300 text-slate-900'
                   }`}
                 >
-                  {/* Badge de Rang */}
+                  {/* Badge de Rang (1er, 2ème, 3ème...) */}
                   <div className="flex items-center justify-between mb-4">
-                    <span className={`px-3 py-1 rounded-full text-xs font-black uppercase border flex items-center gap-1.5 ${badge.bg}`}>
-                      <BadgeIcone className="w-3.5 h-3.5" />
+                    <div className={`inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-xs font-black border ${badge.bg}`}>
+                      <IconBadge className="w-3.5 h-3.5" />
                       <span>{badge.label}</span>
-                    </span>
+                    </div>
 
-                    {estMasque ? (
-                      <span className="flex items-center gap-1 text-[11px] font-bold text-amber-400 bg-amber-400/10 px-2.5 py-1 rounded-full border border-amber-400/20">
-                        <Lock className="w-3 h-3 text-amber-400" />
-                        <span>MASQUÉ</span>
-                      </span>
-                    ) : (
-                      <span className="flex items-center gap-1 text-[11px] font-extrabold text-emerald-700 bg-emerald-50 px-2.5 py-1 rounded-full border border-emerald-200">
-                        <CheckCircle2 className="w-3 h-3 text-emerald-600" />
-                        <span>RÉVÉLÉ</span>
-                      </span>
-                    )}
+                    <div className="text-xs font-mono font-bold text-amber-500 bg-amber-950/60 px-2.5 py-0.5 rounded-full border border-amber-500/30">
+                      Ticket : {g.numeroTicket}
+                    </div>
                   </div>
 
-                  {/* Vue Masquée */}
+                  {/* Zone de Révélation / Masquage avec Suspense */}
                   {estMasque ? (
-                    <div className="py-6 text-center space-y-3">
+                    <div className="py-8 text-center space-y-3">
                       <div className="w-14 h-14 bg-amber-500/10 rounded-2xl border border-amber-400/30 flex items-center justify-center mx-auto text-amber-400 animate-pulse">
-                        <Gift className="w-7 h-7 text-amber-300" />
+                        <Lock className="w-7 h-7 text-amber-400" />
                       </div>
                       <div>
-                        <p className="text-xs text-amber-300 font-bold uppercase tracking-wider mb-1">
-                          À Gagner : {lotGagne}
-                        </p>
-                        <p className="text-base font-black text-white tracking-wide">
-                          ??? ??????
-                        </p>
-                        <p className="text-xs text-amber-300/80 font-mono mt-1 font-bold">
-                          #ROYAL-XXXXX
-                        </p>
-                      </div>
-                      <div className="pt-2">
-                        <span className="inline-flex items-center gap-2 px-4 py-2 rounded-xl bg-amber-500 text-slate-950 text-xs font-black uppercase tracking-wider shadow-lg shadow-amber-500/20">
-                          <Unlock className="w-3.5 h-3.5" />
-                          <span>Cliquez pour Révéler</span>
-                        </span>
+                        <p className="text-base font-black text-amber-300 uppercase tracking-wider">Identité Masquée</p>
+                        <p className="text-xs text-slate-400 font-medium">Cliquez pour révéler le gagnant du {badge.label}</p>
                       </div>
                     </div>
                   ) : (
-                    /* Vue Révélée */
-                    <div className="py-2 space-y-3 animate-in fade-in zoom-in-95 duration-300">
-                      <div className="flex items-center gap-3">
-                        <div className="w-12 h-12 bg-amber-100 rounded-2xl flex items-center justify-center text-amber-800 font-black text-lg border border-amber-200">
-                          <Crown className="w-6 h-6 text-amber-700" />
-                        </div>
-                        <div>
-                          <h4 className="text-xl font-black text-slate-900 leading-tight">
-                            {g.prenom} {g.nom}
-                          </h4>
-                          <p className="text-xs font-mono font-black text-amber-700 mt-0.5">
-                            Ticket : {g.numeroTicket}
-                          </p>
-                        </div>
+                    <div className="space-y-4 animate-in fade-in zoom-in duration-300">
+                      <div className="bg-amber-50 p-4 rounded-2xl border border-amber-200/80 text-center">
+                        <span className="text-amber-800 font-extrabold text-xs uppercase tracking-wider block mb-0.5">Grand Gagnant</span>
+                        <span className="text-2xl font-black text-slate-950 block tracking-tight">{g.nomComplet}</span>
                       </div>
 
-                      <div className="p-3 bg-amber-50 rounded-xl border border-amber-200 text-xs font-extrabold text-amber-900 flex items-center gap-2">
-                        <Gift className="w-4 h-4 text-amber-600 shrink-0" />
-                        <span>Lot Remporté : {lotGagne}</span>
+                      <div className="p-3 bg-slate-50 rounded-xl border border-slate-200 text-xs font-semibold text-slate-700 flex items-center justify-between">
+                        <span className="text-slate-500">Cadeau Attribué :</span>
+                        <span className="font-extrabold text-amber-900">{lotAttr}</span>
                       </div>
 
-                      <div className="pt-2 border-t border-slate-100 flex items-center justify-between text-[11px] text-slate-500 font-medium">
-                        <span>Inscrit le {new Date(g.dateInscription).toLocaleDateString('fr-FR')}</span>
-                        <span className="font-bold text-amber-800">Sélectionné par tirage</span>
+                      <div className="flex items-center justify-between text-[11px] text-slate-400 pt-1">
+                        <span>Inscrit le : {new Date(g.dateInscription).toLocaleDateString('fr-FR')}</span>
+                        <span className="text-emerald-600 font-bold flex items-center gap-1">
+                          <CheckCircle2 className="w-3.5 h-3.5 text-emerald-500" />
+                          <span>Identité Révélée</span>
+                        </span>
                       </div>
                     </div>
                   )}

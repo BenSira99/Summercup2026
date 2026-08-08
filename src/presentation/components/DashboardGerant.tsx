@@ -49,6 +49,7 @@ export const DashboardGerant: React.FC = () => {
   const [estAuthentifie, setEstAuthentifie] = useState(false);
   const [connexionEnCours, setConnexionEnCours] = useState(false);
   const [recherche, setRecherche] = useState('');
+  const [filtreDate, setFiltreDate] = useState<string>('toutes');
   const [chargement, setChargement] = useState(false);
   const [exportPdfEnCours, setExportPdfEnCours] = useState(false);
   const [sauvegardeReussie, setSauvegardeReussie] = useState(false);
@@ -339,7 +340,30 @@ export const DashboardGerant: React.FC = () => {
     }
   };
 
+  // Liste des dates uniques d'inscription triées de la plus récente à la plus ancienne
+  const listeDatesInscriptions = Array.from(
+    new Set(
+      participants
+        .map((p) => {
+          const d = new Date(p.dateInscription);
+          if (isNaN(d.getTime())) return null;
+          return d.toISOString().split('T')[0];
+        })
+        .filter(Boolean) as string[]
+    )
+  ).sort((a, b) => b.localeCompare(a));
+
   const participantsFiltres = participants.filter((p) => {
+    // 1. Filtre par date
+    if (filtreDate !== 'toutes') {
+      const d = new Date(p.dateInscription);
+      if (!isNaN(d.getTime())) {
+        const dateIso = d.toISOString().split('T')[0];
+        if (dateIso !== filtreDate) return false;
+      }
+    }
+
+    // 2. Filtre par texte de recherche
     const terme = recherche.toLowerCase();
     return (
       p.nom.toLowerCase().includes(terme) ||
@@ -437,7 +461,7 @@ export const DashboardGerant: React.FC = () => {
                 )}
               </p>
               <p className="text-[11px] font-bold text-rose-600 bg-rose-50 p-2 rounded-xl border border-rose-200">
-                ⚠️ Cette action est irréversible et supprimera le ticket du tirage.
+                Cette action est irréversible et supprimera le ticket du tirage.
               </p>
             </div>
 
@@ -593,16 +617,46 @@ export const DashboardGerant: React.FC = () => {
         {/* Onglet 1 : Liste des Inscrits */}
         {ongletActif === 'participants' && (
           <div className="space-y-4 w-full">
-            <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 bg-white p-4 rounded-2xl border border-slate-200 shadow-xs">
-              <div className="relative flex-1 max-w-md">
-                <input
-                  type="text"
-                  value={recherche}
-                  onChange={(e) => setRecherche(e.target.value)}
-                  placeholder="Rechercher par nom, téléphone, email, ticket..."
-                  className="w-full pl-10 pr-4 py-2.5 text-xs rounded-xl border border-slate-200 bg-slate-50/50 text-slate-900 outline-none focus:border-amber-500 focus:ring-2 focus:ring-amber-200 font-medium"
-                />
-                <Search className="w-4 h-4 text-slate-400 absolute left-3.5 top-3" />
+            <div className="flex flex-col md:flex-row md:items-center justify-between gap-4 bg-white p-4 rounded-2xl border border-slate-200 shadow-xs">
+              <div className="flex flex-col sm:flex-row items-stretch sm:items-center gap-3 flex-1">
+                {/* Champ de recherche texte */}
+                <div className="relative flex-1 max-w-md">
+                  <input
+                    type="text"
+                    value={recherche}
+                    onChange={(e) => setRecherche(e.target.value)}
+                    placeholder="Rechercher par nom, téléphone, email, ticket..."
+                    className="w-full pl-10 pr-4 py-2.5 text-xs rounded-xl border border-slate-200 bg-slate-50/50 text-slate-900 outline-none focus:border-amber-500 focus:ring-2 focus:ring-amber-200 font-medium"
+                  />
+                  <Search className="w-4 h-4 text-slate-400 absolute left-3.5 top-3" />
+                </div>
+
+                {/* Filtre déroulant par Date d'inscription */}
+                <div className="relative shrink-0">
+                  <select
+                    value={filtreDate}
+                    onChange={(e) => setFiltreDate(e.target.value)}
+                    className="w-full sm:w-auto pl-9 pr-8 py-2.5 text-xs rounded-xl border border-slate-200 bg-slate-50/50 text-slate-900 outline-none focus:border-amber-500 focus:ring-2 focus:ring-amber-200 font-bold cursor-pointer appearance-none"
+                  >
+                    <option value="toutes">Toutes les dates ({participants.length})</option>
+                    {listeDatesInscriptions.map((dateStr) => {
+                      const parts = dateStr.split('-');
+                      const dateFormatee = `${parts[2]}/${parts[1]}/${parts[0]}`;
+                      const estAujourdhui = dateStr === new Date().toISOString().split('T')[0];
+                      const countDate = participants.filter((p) => {
+                        const d = new Date(p.dateInscription);
+                        return !isNaN(d.getTime()) && d.toISOString().split('T')[0] === dateStr;
+                      }).length;
+
+                      return (
+                        <option key={dateStr} value={dateStr}>
+                          {estAujourdhui ? `Aujourd'hui (${dateFormatee})` : dateFormatee} ({countDate})
+                        </option>
+                      );
+                    })}
+                  </select>
+                  <Calendar className="w-4 h-4 text-amber-600 absolute left-3 top-3 pointer-events-none" />
+                </div>
               </div>
 
               <div className="flex items-center gap-2 flex-wrap">
