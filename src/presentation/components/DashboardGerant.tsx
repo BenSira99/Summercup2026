@@ -5,6 +5,7 @@ import { Settings, Users, Download, Trophy, QrCode, Search, RefreshCw, Calendar,
 import { AfficheQrCodeImprimable } from './AfficheQrCodeImprimable';
 import { TirageAuSortAdminSuspense } from './TirageAuSortAdminSuspense';
 import { SelecteurDateHeure } from './SelecteurDateHeure';
+import { SelecteurDateFilter, OptionDateFilter } from './SelecteurDateFilter';
 import { ServiceExportPdfParticipants } from '@/infrastructure/services/ServiceExportPdfParticipants';
 import { toast } from 'sonner';
 
@@ -353,6 +354,23 @@ export const DashboardGerant: React.FC = () => {
     )
   ).sort((a, b) => b.localeCompare(a));
 
+  // Options formatées pour le SelecteurDateFilter personnalisé
+  const optionsDateFilter: OptionDateFilter[] = listeDatesInscriptions.map((dateStr) => {
+    const parts = dateStr.split('-');
+    const dateFormatee = `${parts[2]}/${parts[1]}/${parts[0]}`;
+    const estAujourdhui = dateStr === new Date().toISOString().split('T')[0];
+    const countDate = participants.filter((p) => {
+      const d = new Date(p.dateInscription);
+      return !isNaN(d.getTime()) && d.toISOString().split('T')[0] === dateStr;
+    }).length;
+
+    return {
+      valeur: dateStr,
+      libelle: estAujourdhui ? `Aujourd'hui (${dateFormatee})` : dateFormatee,
+      compte: countDate,
+    };
+  });
+
   const participantsFiltres = participants.filter((p) => {
     // 1. Filtre par date
     if (filtreDate !== 'toutes') {
@@ -631,32 +649,13 @@ export const DashboardGerant: React.FC = () => {
                   <Search className="w-4 h-4 text-slate-400 absolute left-3.5 top-3" />
                 </div>
 
-                {/* Filtre déroulant par Date d'inscription */}
-                <div className="relative shrink-0">
-                  <select
-                    value={filtreDate}
-                    onChange={(e) => setFiltreDate(e.target.value)}
-                    className="w-full sm:w-auto pl-9 pr-8 py-2.5 text-xs rounded-xl border border-slate-200 bg-slate-50/50 text-slate-900 outline-none focus:border-amber-500 focus:ring-2 focus:ring-amber-200 font-bold cursor-pointer appearance-none"
-                  >
-                    <option value="toutes">Toutes les dates ({participants.length})</option>
-                    {listeDatesInscriptions.map((dateStr) => {
-                      const parts = dateStr.split('-');
-                      const dateFormatee = `${parts[2]}/${parts[1]}/${parts[0]}`;
-                      const estAujourdhui = dateStr === new Date().toISOString().split('T')[0];
-                      const countDate = participants.filter((p) => {
-                        const d = new Date(p.dateInscription);
-                        return !isNaN(d.getTime()) && d.toISOString().split('T')[0] === dateStr;
-                      }).length;
-
-                      return (
-                        <option key={dateStr} value={dateStr}>
-                          {estAujourdhui ? `Aujourd'hui (${dateFormatee})` : dateFormatee} ({countDate})
-                        </option>
-                      );
-                    })}
-                  </select>
-                  <Calendar className="w-4 h-4 text-amber-600 absolute left-3 top-3 pointer-events-none" />
-                </div>
+                {/* Filtre déroulant sur-mesure par Date d'inscription */}
+                <SelecteurDateFilter
+                  valeurActive={filtreDate}
+                  options={optionsDateFilter}
+                  totalTous={participants.length}
+                  surChangement={(val) => setFiltreDate(val)}
+                />
               </div>
 
               <div className="flex items-center gap-2 flex-wrap">
